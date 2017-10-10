@@ -13,13 +13,18 @@ var db_url = "mongodb://sathvikkatam:Unicorn_123@ds113435.mlab.com:13435/urlshor
 app.use(express.static('public'));
 app.get("/short-it/*" , function(req, res){
   var requested_url = req.params[0];
+  if(requested_url.includes("https://") || requested_url.includes("http://")){
+    
+  
   var short_url = connectDb(requested_url);
   var response_body = {
     "long_url": requested_url,
     "short_url" : "https://organic-opera.glitch.me/"+short_url
   }
   
-  res.send(response_body);
+    res.send(response_body);
+  }
+   res.status(400).send('Not https or http');
 });
 
 
@@ -43,7 +48,6 @@ app.get("/:endcoded_id" , function(req, res){
   console.log(url_id);
   var url_redirect;
   var query = {code : url_id }
-  //console.log("db_result "+db_result);
   get_long_url(query, res);
   
 });
