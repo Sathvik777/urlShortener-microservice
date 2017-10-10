@@ -13,9 +13,10 @@ var db_url = "mongodb://sathvikkatam:Unicorn_123@ds113435.mlab.com:13435/urlshor
 app.use(express.static('public'));
 app.get("/short-it/*" , function(req, res){
   var requested_url = req.params[0];
-  connectDb(requested_url);
+  var short_url = connectDb(requested_url);
   var response_body = {
-    "long_url": requested_url
+    "long_url": requested_url,
+    "short_url" : "https://organic-opera.glitch.me/"+short_url
   }
   
   res.send(response_body);
@@ -23,31 +24,54 @@ app.get("/short-it/*" , function(req, res){
 
 
 function connectDb(requested_url){
-  MongoClient.connect(db_url, function(err, db) {
+   var encoded_id = makeid();
+  MongoClient.connect(db_url, encoded_id, function(err, db) {
   if (err) throw err;
-  var myobj = { url: requested_url};
+  
+  var myobj = { code : encoded_id,
+    url: requested_url};
   db.collection("url_list").insertOne(myobj, function(err, res) {
     if (err) throw err;
-    console.log("1 document inserted "+res._id);
     db.close();
   });
 });
+  return encoded_id;
 }
 
 app.get("/:endcoded_id" , function(req, res){
  var url_id = req.params.endcoded_id;
+  console.log(url_id);
   var url_redirect;
-  var query = {_id : url_id }
+  var query = {code : url_id }
+  //console.log("db_result "+db_result);
+  get_long_url(query, res);
+  
+});
+
+function get_long_url(query ,res){
   MongoClient.connect(db_url, function(err, db) {
   if (err) throw err;
   db.collection("url_list").find(query).toArray(function(err, result) {
-    if (err) throw err;
-        url_redirect = result;
+      if (err) throw err;
+      console.log(result[0].url );
+      if (result[0].url != undefined) {
+          res.redirect(result[0].url ); 
+        }
           db.close();
         });
     });
-  res.redirect(url_redirect);
-});
+}
+
+
+function makeid() {
+  var text = "";
+  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  for (var i = 0; i < 5; i++)
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+  return text;
+}
 
 
 
